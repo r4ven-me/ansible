@@ -1,0 +1,75 @@
+---
+
+- name: Config sshd service and copy private key   # playbook name/description
+  hosts: all                            # apply to all hosts
+  gather_facts: false                   # do not gather facts (speeds up execution)
+  become: true                          # execute with elevated privileges (sudo)
+  force_handlers: true                  # run handlers even if there is an error
+
+  vars:
+    - new_ssh_port: 4444                # new SSH port number
+    - user_name: "ivan"                 # username for whom the SSH key is added
+    - user_ssh_privkey: "/home/ivan/ansible/id_ed25519_new" # path to the user's private SSH key
+    - user_ssh_pubkey: "/home/ivan/ansible/id_ed25519_new.pub" # path to the user's public SSH key
+
+  tasks:
+    - name: Change sshd port number
+      lineinfile:
+        path: /etc/ssh/sshd_config      # path to SSH configuration file
+        regexp: "^Port"                 # regex to find the port line
+        line: "Port {{ new_ssh_port }}" # change port to value from variable
+        backup: true                    # create a backup of sshd_config before modifying
+      notify:
+        - Restart sshd                  # handler to restart SSH if modified
+      tags:
+        ssh_server                      # tag to allow selective task execution
+    
+    - name: Disable sshd password auth
+      lineinfile:
+        path: /etc/ssh/sshd_config      # path to SSH configuration file
+        regexp: '^PasswordAuthentication yes'  # regex to find the line
+        line: 'PasswordAuthentication no'      # disable password authentication
+      notify:
+        - Restart sshd                  # handler to restart SSH
+      tags:
+        ssh_server                      # tag for SSH server task
+
+    - name: Create ssh directory if it does not exist
+      file:
+        path: "/home/{{ user_name }}/.ssh/"  # path to .ssh directory for user
+        state: directory               # create directory if it does not exist
+        owner: "{{ user_name }}"       # set owner
+        group: "{{ user_name }}"       # set group
+        mode: 0700                     # directory permissions
+      tags:
+        - ssh_client                   # tag for SSH client tasks
+    
+    - name: Add user ssh public key
+      lineinfile:
+        path: "/home/{{ user_name }}/.ssh/authorized_keys"  # path to authorized_keys file
+        line: "{{ lookup('file', '{{ user_ssh_pubkey }}') }}"  # use public key file content as line to add
+        owner: "{{ user_name }}"       # set owner
+        group: "{{ user_name }}"       # set group
+        mode: 0600                     # file permissions
+        backup: true                   # create a backup before modifying
+        create: true                   # create file if it does not exist
+      tags:
+        - ssh_client                   # tag for SSH client tasks
+
+    - name: Copy user ssh private key
+      copy:
+        src: "{{ user_ssh_privkey }}"  # path to file on the local machine
+        dest: "/home/{{ user_name }}/.ssh/"  # path to directory on remote server, trailing slash is required
+        owner: "{{ user_name }}"       # set owner
+        group: "{{ user_name }}"       # set group
+        mode: 0600                     # file permissions
+        backup: true                   # create a backup before modifying
+      when: project == "vpn"           # only run if host variable project = "vpn"
+      tags:
+        - ssh_client                   # tag for SSH client tasks
+
+  handlers:
+    - name: Restart sshd
+      systemd:
+        name: sshd                     # name of SSH systemd service
+        state: restarted               # restart the service

@@ -1,0 +1,30 @@
+---
+
+- name: Debug
+
+  hosts: debian12-vpn
+  gather_facts: true
+  become: true
+
+  tasks:
+
+    - name: Debug 1
+      debug:
+        msg: "Example to use var: {{ ansible_facts.os_family }}"
+
+    - name: Debug 2
+      debug:
+        var: ansible_facts.distribution_version
+
+    - name: Debug 3
+      debug:
+        var: project
+
+    - name: Shell 1
+      shell:
+        cmd: whoami
+      register: user_name
+
+    - name: Debug 4
+      debug:
+        var: user_name.stdout

@@ -1,0 +1,9 @@
+---
+
+- name: Check connection
+
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ping
+      ping:

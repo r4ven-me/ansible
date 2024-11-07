@@ -1,0 +1,46 @@
+## HOSTS
+all:
+  hosts:
+    debian12-vpn:
+      ansible_host: 192.168.122.93
+      ansible_port: 22
+      ansible_user: ivan
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      project: vpn
+    debian12-dns:
+      ansible_host: 192.168.122.201
+      ansible_port: 22
+      ansible_user: ivan
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      project: vpn
+    debian12-monitoring:
+      ansible_host: 192.168.122.30
+      ansible_port: 22
+      ansible_user: ivan
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      project: monitor
+    ubuntu22-storage:
+      ansible_host: 192.168.122.5
+      ansible_port: 22
+      ansible_user: ivan
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      # ansible_password: "Pa$$w0rD"
+      project: storage
+    ubuntu22-backup:
+      ansible_host: 192.168.122.249
+      ansible_port: 22
+      ansible_user: ivan
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+      # ansible_become_password: "Pa$$w0rD"
+      project: storage
+
+## GROUPS
+debian:
+  hosts:
+    debian12-vpn:
+    debian12-dns:
+    debian12-monitoring:
+ubuntu:
+  hosts:
+    ubuntu22-storage:
+    ubuntu22-backup:
