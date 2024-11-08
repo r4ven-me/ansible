@@ -22,7 +22,7 @@
       notify:
         - Restart sshd                  # handler to restart SSH if modified
       tags:
-        ssh_server                      # tag to allow selective task execution
+        - ssh_server                      # tag to allow selective task execution
     
     - name: Disable sshd password auth
       lineinfile:
@@ -32,7 +32,7 @@
       notify:
         - Restart sshd                  # handler to restart SSH
       tags:
-        ssh_server                      # tag for SSH server task
+        - ssh_server                      # tag for SSH server task
 
     - name: Create ssh directory if it does not exist
       file:
