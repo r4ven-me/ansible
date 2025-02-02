@@ -1,0 +1,146 @@
+---
+### Server configuration
+
+- name: Change root password
+  ansible.builtin.user:
+    name: "root"
+    password: "{{ server_root_password }}"
+  tags: root
+
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ server_timezone }}"
+  tags:
+    - timezone
+
+
+- name: Change hostname
+  ansible.builtin.lineinfile:
+    path: "/etc/hostname"
+    regexp: "^.*$"
+    line: "{{ server_hostname }}"
+  tags:
+    - hostname
+
+
+- name: Set hosts
+  ansible.builtin.lineinfile:
+    path: "/etc/hosts"
+    line: "{{ item }}"
+    state: present
+  loop: "{{ server_hosts }}"
+  tags:
+    - hosts
+
+
+- name: Config locales
+  community.general.locale_gen:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ server_locales }}"
+  tags:
+    - locales
+
+
+- name: Update system and install pkgs
+  block:
+    - name: Cache update and system upgrade
+      ansible.builtin.apt:
+        upgrade: true
+        update_cache: true
+
+    - name: Install pkgs
+      ansible.builtin.apt:
+        name: "{{ server_pkgs }}"
+        state: present
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  tags:
+    - pkgs
+
+
+- name: Config SWAP
+  block:
+    - name: Checking if swap partition exists
+      ansible.builtin.shell: "swapon -s | grep -q /"
+      register: swap_status
+      ignore_errors: true
+      changed_when: false
+      failed_when: false
+
+    - name: Make 2gb swap file
+      ansible.builtin.command: "{{ item }}"
+      loop:
+        # - "fallocate -l {{ server_swap_size }} /swap"
+        - "dd if=/dev/zero of=/swap bs=1M count={{ server_swap_size }}"
+        - "chmod 600 /swap"
+        - "mkswap /swap"
+        - "swapon /swap"
+      when: swap_status.rc != 0
+      notify: Enable swap on startup
+  tags:
+    - swap
+
+
+- name: Disable ipv6 in system
+  ansible.builtin.lineinfile:
+    path: "/etc/sysctl.conf"
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }} = {{ item.value }}"
+    state: present
+    create: true
+  loop:
+    - {key: "net.ipv6.conf.all.disable_ipv6", value: "1"}
+    - {key: "net.ipv6.conf.default.disable_ipv6", value: "1"}
+    - {key: "net.ipv6.conf.lo.disable_ipv6", value: "1"}
+  notify: Reload sysctl
+  tags:
+    - ipv6
+
+
+- name: Disable ipv6 in UFW
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: "^IPV6=yes"
+    line: "IPV6=no"
+  tags:
+    - ipv6
+
+
+- name: Allow ports from list in UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+    state: enabled
+  loop: "{{ server_ufw_ports }}"
+  notify:
+    - Restart ufw service
+  tags:
+    - ufw
+
+
+- name: Config journald
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    backup: true
+  loop: "{{ server_journald_params }}"
+  notify: Restart journald service
+  tags:
+    - journald
+
+
+- name: Config SSH daemon
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }} {{ item.value }}"
+    validate: "/usr/sbin/sshd -t -f %s"
+    backup: true
+  loop: "{{ server_ssh_params }}"
+  notify:
+    - Restart sshd service
+  tags:
+    - sshd

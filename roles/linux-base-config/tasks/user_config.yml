@@ -1,0 +1,91 @@
+---
+### User configuration
+
+- name: Create user with shell, groups and password
+  ansible.builtin.user:
+    name: "{{ user_name }}"
+    shell: "{{ user_shell }}"
+    groups: "{{ user_groups }}"
+    append: true
+    password: "{{ user_password }}"
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  tags:
+    - user
+
+
+- name: Create ssh directory
+  ansible.builtin.file:
+    path: "{{ user_home }}/.ssh/"
+    state: directory
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: "0700"
+  tags:
+    - ssh
+
+
+- name: Add user ssh public key
+  ansible.builtin.lineinfile:
+    path: "{{ user_home }}/.ssh/authorized_keys"
+    line: "{{ user_ssh_pubkey }}"
+    create: true
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: "0600"
+  tags:
+    - ssh
+
+
+- name: Install user pkgs
+  ansible.builtin.apt:
+    name: "{{ user_pkgs }}"
+    state: present
+    update_cache: true
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  tags:
+    - user_pkgs
+
+
+- name: Create dots dir
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    recurse: true
+  loop:
+    - "{{ user_home }}/.local/share/nvim/site/autoload/"
+    - "{{ user_home }}/.config/nvim/"
+    - "{{ user_home }}/.config/tmux/"
+  tags:
+    - dots
+
+
+- name: Download dot files
+  ansible.builtin.shell:
+    cmd: "sudo -u {{ user_name }}
+          curl -fsSL https://raw.githubusercontent.com/{{ item.key }}
+          -o {{ user_home }}/{{ item.value }}"
+  loop:
+    - {key: "r4ven-me/dots/main/.zshrc", value: ".zshrc"}
+    - {key: "junegunn/vim-plug/master/plug.vim", value: ".local/share/nvim/site/autoload/plug.vim"}
+    - {key: "r4ven-me/dots/main/.config/nvim/init.vim", value: ".config/nvim/init.vim"}
+    - {key: "r4ven-me/dots/main/.config/nvim/plugins.vim", value: ".config/nvim/plugins.vim"}
+    - {key: "r4ven-me/dots/main/.config/tmux/tmux.conf", value: ".config/tmux/tmux.conf"}
+  tags:
+    - dots
+
+
+- name: Apply config for dot files
+  ansible.builtin.shell: "sudo -u {{ user_name }} {{ item }}"
+  loop:
+    - "zsh -c 'source {{ user_home }}/.zshrc'"
+    - "nvim -e -c 'PlugInstall' -c 'qall!'"
+    - "git clone https://github.com/tmux-plugins/tpm {{ user_home }}/.config/tmux/plugins/tpm"
+    - "{{ user_home }}/.config/tmux/plugins/tpm/bin/install_plugins"
+  ignore_errors: true
+  changed_when: true
+  failed_when: false
+  no_log: true
+  tags:
+    - dots

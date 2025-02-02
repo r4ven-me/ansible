@@ -1,0 +1,127 @@
+---
+### Handlers file for base-server-config
+
+- name: Enable swap on startup
+  ansible.builtin.lineinfile:
+    path: "/etc/fstab"
+    regexp: "^/swap"
+    line: '/swap none swap sw 0 0'
+    state: present
+
+
+- name: Reload sysctl
+  ansible.builtin.shell: "sysctl -p"
+  failed_when: false
+
+
+- name: Restart journald service
+  ansible.builtin.systemd_service:
+    name: systemd-journald
+    state: restarted
+
+
+- name: Restart ufw service
+  ansible.builtin.systemd_service:
+    name: ufw
+    state: restarted
+    enabled: true
+
+
+- name: Restart sshd service
+  ansible.builtin.systemd_service:
+    name: >-
+      {%- if ansible_facts['distribution'] == 'Debian' -%}
+        sshd
+      {%- elif ansible_facts['distribution'] == 'Ubuntu' -%}
+        ssh
+      {%- else -%}
+        ssh
+      {%- endif -%}
+    daemon_reload: true
+    state: restarted
+
+
+- name: Reboot system
+  ansible.builtin.shell: "sleep 5 && reboot"
+  async: 1
+  poll: 0
+
+
+- name: Change connection facts
+  ansible.builtin.set_fact:
+    ansible_port: "{{ server_ssh_port }}"
+    ansible_user: "{{ user_name }}"
+  changed_when: true
+
+
+- name: Wait for online
+  ansible.builtin.wait_for_connection:
+    connect_timeout: 120
+    sleep: 5
+    delay: 5
+    timeout: 300
+
+
+- name: Change owner oh-my-zsh files
+  ansible.builtin.shell:
+    cmd: "chown -Rh {{ user_name }}:{{ user_name }} {{ user_zsh_path }}"
+
+
+- name: Get autosuggestions zsh plugin
+  ansible.builtin.git:
+    repo: "https://github.com/zsh-users/zsh-autosuggestions"
+    dest: "{{ user_zsh_path }}/custom/plugins/zsh-autosuggestions"
+
+
+- name: Get syntax-highlighting zsh plugin
+  ansible.builtin.git:
+    repo: "https://github.com/zdharma-continuum/fast-syntax-highlighting"
+    dest: "{{ user_zsh_path }}/custom/plugins/fast-syntax-highlighting"
+
+
+- name: Get cmdtime zsh plugin
+  ansible.builtin.git:
+    repo: "https://github.com/tom-auger/cmdtime"
+    dest: "{{ user_zsh_path }}/custom/plugins/cmdtime"
+
+
+- name: Get autopair zsh plugin
+  ansible.builtin.git:
+    repo: "https://github.com/hlissner/zsh-autopair"
+    dest: "{{ user_zsh_path }}/custom/plugins/zsh-autopair"
+
+
+- name: Create root config dir
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "/root/.config"
+    - "/root/.local/share"
+
+
+- name: Copy dots to root
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    remote_src: true
+  with_items:
+    - {src: "/home/{{ user_name }}/.zshrc", dest: "/root/"}
+    - {src: "{{ user_zsh_path }}", dest: "/root/.config/"}
+    - {src: "/home/{{ user_name }}/.config/nvim", dest: "/root/.config/"}
+    - {src: "/home/{{ user_name }}/.local/share/nvim", dest: "/root/.local/share/"}
+
+
+- name: Set pass and shell for root
+  ansible.builtin.user:
+    name: "root"
+    shell: "{{ user_shell }}"
+    password: "{{ root_password }}"
+
+
+- name: Delete ufw rule for default ssh port
+  community.general.ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+    delete: true

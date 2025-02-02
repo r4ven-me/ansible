@@ -1,0 +1,78 @@
+---
+### Default vars
+
+# General
+server_config: true
+server_reboot: true
+user_config: true
+
+# User
+user_name: "ivan"
+user_home: "/home/{{ user_name }}"
+# use 'mkpasswd --method=sha-512' command to generate password hash (whois pkg)
+user_password: "$6$gKi8acqF5AxMpHKK$mSaoEkOH8WMjvMxEH2/azDr08ypzu1OGIUaprYhwsoGFAG69S917bCZ4SRP1I5.iRpk4.Mw6pLHo/mklYPA7g0"
+user_groups:
+  - "users"
+  - "adm"
+  - "sudo"
+user_shell: "/usr/bin/zsh"
+user_ssh_pubkey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINQdlmVhGAz7z3NrJ6/goVtpeVf+xEjeZfZWfA55whZO ivan@r4ven-me"
+user_pkgs:
+  - "zsh"
+  - "neovim"
+  - "tmux"
+  - "fzf"
+  - "git"
+  - "curl"
+  - "shellcheck"
+  - "pylint"
+  - "yamllint"
+  - "bat"
+  - "{{ 'exa' if ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] <= '12' else 'eza' }}"
+
+# Server
+server_root_password: "$6$jGYWmPob7wv9CQgB$KZPaEoXI39GPQp4pi08T1e9d6CT9BqNqGixBJ.CXn1ArUQQ1Lnnlr0lD7pFnVw7r3/5syDebNbK7HkSGLTHX8."
+server_timezone: "Europe/Moscow"
+server_hostname: "{{ inventory_hostname }}"
+server_hosts:
+  - "127.0.0.1 {{ server_hostname }}"
+  - "127.0.1.1 {{ server_hostname }}"
+server_locales:
+  - "en_US.UTF-8"
+  - "ru_RU.UTF-8"
+server_swap_size: "2048"
+server_journald_params:
+  - {key: "SystemMaxUse", value: "800M"}
+  - {key: "MaxFileSec", value: "2week"}
+server_ssh_port: "2222"
+server_ssh_params:
+  - {key: "Port", value: "{{ server_ssh_port }}"}
+  - {key: "AddressFamily", value: "inet"}
+  - {key: "PermitEmptyPasswords", value: "no"}
+  - {key: "PermitRootLogin", value: "no"}
+  - {key: "PubkeyAuthentication", value: "yes"}
+  - {key: "PasswordAuthentication", value: "no"}
+  - {key: "AllowUsers", value: "{{ user_name }}"}
+server_ufw_ports:
+  - "22"
+  - "{{ server_ssh_port }}"
+  - "443"
+  - "80"
+  - "53"
+server_pkgs:
+  - "sudo"
+  - "locales"
+  - "ufw"
+  - "software-properties-common"
+  - "ca-certificates"
+  - "net-tools"
+  - "dnsutils"
+  - "mtr-tiny"
+  - "nload"
+  - "ncat"
+  - "wget"
+  - "curl"
+  - "git"
+  - "mc"
+  - "neovim"
+  - "tmux"

@@ -1,0 +1,11 @@
+---
+### Main playbook
+
+- name: Basic server configuration
+  hosts: all
+  # remote_user: root
+  gather_facts: true
+  become: true
+  force_handlers: true
+  roles:
+    - role: ../server-base-config

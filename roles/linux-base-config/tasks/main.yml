@@ -1,0 +1,26 @@
+---
+
+### Tasks file for base-server-config
+### ansible-galaxy collection install community.general
+
+- import_tasks: server_config.yml
+  when: server_config == true
+  # tags: server_config
+
+
+- import_tasks: user_config.yml
+  when: user_config == true
+  # tags: user_config
+
+
+- name: Init reboot handlers
+  ansible.builtin.debug:
+    msg: "Running handlers..."
+  notify:
+    - Reboot system
+    - Change connection facts
+    - Wait for online
+  when: server_reboot == true
+  changed_when: true
+  tags:
+    - reboot
