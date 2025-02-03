@@ -1,12 +1,15 @@
 ---
-### Default vars
+####################
+### Default vars ###
+####################
 
-# General
-server_config: true
-server_reboot: true
-user_config: true
+# --- GENERAL --- #
+server_config: false
+server_reboot: false
+user_config: false
 
-# User
+
+# --- USER --- #
 user_name: "ivan"
 user_home: "/home/{{ user_name }}"
 # use 'mkpasswd --method=sha-512' command to generate password hash (whois pkg)
@@ -30,7 +33,8 @@ user_pkgs:
   - "bat"
   - "{{ 'exa' if ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] <= '12' else 'eza' }}"
 
-# Server
+
+# --- SERVER --- #
 server_root_password: "$6$jGYWmPob7wv9CQgB$KZPaEoXI39GPQp4pi08T1e9d6CT9BqNqGixBJ.CXn1ArUQQ1Lnnlr0lD7pFnVw7r3/5syDebNbK7HkSGLTHX8."
 server_timezone: "Europe/Moscow"
 server_hostname: "{{ inventory_hostname }}"

@@ -3,6 +3,16 @@
 ### Tasks file for base-server-config
 ### ansible-galaxy collection install community.general
 
+- name: Check flags
+  ansible.builtin.debug:
+    msg: "At least one of the flags should be set to true:
+      server_config | user_config | server_reboot"
+  changed_when: true
+  when: (server_config and user_config and server_reboot) != true
+  tags:
+    - check_flags
+
+
 - import_tasks: server_config.yml
   when: server_config == true
   # tags: server_config
@@ -20,6 +30,7 @@
     - Reboot system
     - Change connection facts
     - Wait for online
+    - Delete ufw rule for default ssh port
   when: server_reboot == true
   changed_when: true
   tags:

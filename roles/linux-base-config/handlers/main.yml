@@ -11,7 +11,7 @@
 
 - name: Reload sysctl
   ansible.builtin.shell: "sysctl -p"
-  failed_when: false
+  ignore_errors: true
 
 
 - name: Restart journald service
@@ -125,3 +125,4 @@
     port: 22
     proto: tcp
     delete: true
+  ignore_errors: true
