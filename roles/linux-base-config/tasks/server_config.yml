@@ -5,7 +5,8 @@
   ansible.builtin.user:
     name: "root"
     password: "{{ server_root_password }}"
-  tags: root
+  tags:
+    - root
 
 
 - name: Set timezone
@@ -68,7 +69,7 @@
       changed_when: false
       failed_when: false
 
-    - name: Make 2gb swap file
+    - name: Make swap file
       ansible.builtin.command: "{{ item }}"
       loop:
         # - "fallocate -l {{ server_swap_size }} /swap"

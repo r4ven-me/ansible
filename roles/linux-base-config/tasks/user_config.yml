@@ -46,7 +46,7 @@
     - user_pkgs
 
 
-- name: Create dots dir
+- name: Create dot dirs
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory

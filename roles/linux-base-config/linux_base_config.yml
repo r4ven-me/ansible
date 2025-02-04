@@ -8,4 +8,4 @@
   become: true
   force_handlers: true
   roles:
-    - role: ../server-base-config
+    - role: ../linux-base-config

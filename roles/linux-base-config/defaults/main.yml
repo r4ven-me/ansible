@@ -1,7 +1,5 @@
 ---
-####################
-### Default vars ###
-####################
+### Default vars
 
 # --- GENERAL --- #
 server_config: false

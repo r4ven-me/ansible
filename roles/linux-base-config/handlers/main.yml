@@ -42,9 +42,18 @@
 
 
 - name: Reboot system
-  ansible.builtin.shell: "sleep 5 && reboot"
+  ansible.builtin.shell: "sleep 10 && reboot"
   async: 1
   poll: 0
+
+
+- name: Delete ufw rule for default ssh port
+  community.general.ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+    delete: true
+  when: server_config == true and ansible_facts['user_id'] == "root"
 
 
 - name: Change connection facts
@@ -56,9 +65,9 @@
 
 - name: Wait for online
   ansible.builtin.wait_for_connection:
-    connect_timeout: 120
+    connect_timeout: 15
     sleep: 5
-    delay: 5
+    delay: 40
     timeout: 300
 
 
@@ -89,40 +98,3 @@
   ansible.builtin.git:
     repo: "https://github.com/hlissner/zsh-autopair"
     dest: "{{ user_zsh_path }}/custom/plugins/zsh-autopair"
-
-
-- name: Create root config dir
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-  loop:
-    - "/root/.config"
-    - "/root/.local/share"
-
-
-- name: Copy dots to root
-  ansible.builtin.copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    remote_src: true
-  with_items:
-    - {src: "/home/{{ user_name }}/.zshrc", dest: "/root/"}
-    - {src: "{{ user_zsh_path }}", dest: "/root/.config/"}
-    - {src: "/home/{{ user_name }}/.config/nvim", dest: "/root/.config/"}
-    - {src: "/home/{{ user_name }}/.local/share/nvim", dest: "/root/.local/share/"}
-
-
-- name: Set pass and shell for root
-  ansible.builtin.user:
-    name: "root"
-    shell: "{{ user_shell }}"
-    password: "{{ root_password }}"
-
-
-- name: Delete ufw rule for default ssh port
-  community.general.ufw:
-    rule: allow
-    port: 22
-    proto: tcp
-    delete: true
-  ignore_errors: true
