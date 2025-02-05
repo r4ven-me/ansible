@@ -56,19 +56,15 @@
   when: server_config == true and ansible_facts['user_id'] == "root"
 
 
-- name: Change connection facts
-  ansible.builtin.set_fact:
-    ansible_port: "{{ server_ssh_port }}"
-    ansible_user: "{{ user_name }}"
-  changed_when: true
-
-
 - name: Wait for online
   ansible.builtin.wait_for_connection:
     connect_timeout: 15
     sleep: 5
     delay: 40
     timeout: 300
+  vars:
+    ansible_port: "{{ server_ssh_port }}"
+    ansible_user: "{{ user_name }}"
 
 
 - name: Change owner oh-my-zsh files
