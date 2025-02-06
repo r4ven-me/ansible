@@ -65,32 +65,3 @@
   vars:
     ansible_port: "{{ server_ssh_port }}"
     ansible_user: "{{ user_name }}"
-
-
-- name: Change owner oh-my-zsh files
-  ansible.builtin.shell:
-    cmd: "chown -Rh {{ user_name }}:{{ user_name }} {{ user_zsh_path }}"
-
-
-- name: Get autosuggestions zsh plugin
-  ansible.builtin.git:
-    repo: "https://github.com/zsh-users/zsh-autosuggestions"
-    dest: "{{ user_zsh_path }}/custom/plugins/zsh-autosuggestions"
-
-
-- name: Get syntax-highlighting zsh plugin
-  ansible.builtin.git:
-    repo: "https://github.com/zdharma-continuum/fast-syntax-highlighting"
-    dest: "{{ user_zsh_path }}/custom/plugins/fast-syntax-highlighting"
-
-
-- name: Get cmdtime zsh plugin
-  ansible.builtin.git:
-    repo: "https://github.com/tom-auger/cmdtime"
-    dest: "{{ user_zsh_path }}/custom/plugins/cmdtime"
-
-
-- name: Get autopair zsh plugin
-  ansible.builtin.git:
-    repo: "https://github.com/hlissner/zsh-autopair"
-    dest: "{{ user_zsh_path }}/custom/plugins/zsh-autopair"
