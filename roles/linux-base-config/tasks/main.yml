@@ -30,7 +30,6 @@
   notify:
     - Reboot system
     - Delete ufw rule for default ssh port
-    - Change connection facts
     - Wait for online
   when: server_reboot == true
   changed_when: true
