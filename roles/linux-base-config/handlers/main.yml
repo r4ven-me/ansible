@@ -62,6 +62,7 @@
     sleep: 5
     delay: 40
     timeout: 300
+  become: false
   vars:
     ansible_port: "{{ server_ssh_port }}"
     ansible_user: "{{ user_name }}"
